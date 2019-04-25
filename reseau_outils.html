@@ -1,0 +1,241 @@
+<!DOCTYPE HTML>
+<html lang="fr">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+		<title>IPv4 Tools</title>
+	</head>
+	<body>
+	
+	<h1>IPv4 Tools</h1>
+	<h3>255.255.255.0</h3>
+	<h3>192.168.1.0</h3>
+	
+	<label for='plage'>Range of availables adresses </label>
+	<input readonly id='plage_min'></input>...<input readonly id='plage_max'></input><br><br>
+	
+	<label for='ip_random'><i>an address among those available</i></label>
+	<input  id='ip_random' onchange='go_ip_random()' ></input>
+	<div id='zone_msg_random'></div><div id='zone_msg_prive'></div><div id='zone_msg_classe'></div>
+	<br><br><br>
+	
+	
+	<label for='ip_reseau'>Network Address</label>
+	<input id='ip_reseau' onchange='go_ip_network()'></input>
+	
+	<label for='broadcast'>Broadcast Address</label>
+	<input readonly id='broadcast' onchange='go_ip_network()'></input>
+	<div id='zone_msg_reseau'></div>
+
+	<br><br>
+	<label for='masque'>Mask</label>
+	<input id='masque' onchange='go_mask() ; go_ip_network()'></input>
+
+	<label for='cidr'>CIDR /</label>
+	<input size=2 id='cidr' onchange='go_cidr() ; go_ip_network()' ></input>
+	
+	<br><br><br><br><br><br><br>
+	<h2>Quel est le masque le mieux adapté ?</h2>
+	
+	<label for='nb_machines'>Nombre de machines</label>
+	<input id='nb_machines' oninput='go_calcul_taille()'></input>
+	
+	<label for='masque_en_fonction'>Masque</label>
+	<input id='masque_en_fonction'>
+	<br><br><br><br>
+	<script>
+		var masque_en_binaire = "";
+		var nb ;
+		var masque_ok=false;
+		var ip_random_reseau;
+		var random_ok;
+		
+		function insert(str, index, value) {
+			return str.substr(0, index) + value + str.substr(index);
+		}	
+	
+		function dec2bin(dec){
+			res = (dec >>> 0).toString(2) ;
+			while ( res.length < 8 )
+				res = insert(res, 0, '0');
+			return res;
+		}
+		
+		function IP_base2ToNum(ip_binaire){
+		ip_numerique = ""
+		ip_numerique += parseInt( ip_binaire.slice(0,8) , 2 ) + "."
+		ip_numerique += parseInt( ip_binaire.slice(8,16) , 2 ) + "."
+		ip_numerique += parseInt( ip_binaire.slice(16,24) , 2 ) + "."
+		ip_numerique += parseInt( ip_binaire.slice(24,32) , 2 )
+		
+		return ip_numerique ;
+		}
+		
+		function go_mask(){
+			
+			masque = document.getElementById('masque').value.split('.')
+			dec2bin( masque[i] );
+			masque_en_binaire="";
+			
+			for (var i=0 ; i<masque.length ; i++ ){
+				//console.log( dec2bin( masque[i] ) );
+				masque_en_binaire += dec2bin( masque[i] ); 
+				
+			}
+			
+			console.log("Le masque en binaire : "+masque_en_binaire);
+			if (masque_en_binaire.length !=32){
+				console.log("masque faux, taille invalide"); return;
+				masque_ok = false;								}
+				
+			regex = /(11*)(0*)/g ;
+			tab = regex.exec(masque_en_binaire);
+			if (tab[1].length + tab[2].length != 32){
+				console.log("masque faux, c'est n'est pas une suite de 1 suivis d'une suite de 0"); return;	 
+				masque_ok = false; }
+			nb = (32-(tab[2].length) );
+			masque_ok = true;
+			console.log("Masque OK");
+			
+			console.log("partie réseau : "+ tab[1] + " ("+ tab[1].length + " bits) ");
+			console.log("partie machine : "+ tab[2] + " ("+ tab[2].length + " bits) ");
+			console.log("notation CIDR : /"+ nb);
+			document.getElementById('cidr').value = nb;
+			
+			if(random_ok)
+				go_ip_random();
+		}
+		
+		function go_cidr(){
+			
+			cidr = document.getElementById('cidr').value ;
+			masque = "1".repeat(cidr) + "0".repeat(32-cidr) ;
+			
+			document.getElementById('masque').value = IP_base2ToNum(masque);
+			go_mask();
+		}
+		
+		function go_ip_network(){
+			//executé quand ip réseau est entrée
+			ip = document.getElementById('ip_reseau').value.split('.');
+			
+			ip_en_binaire = "";
+			
+			for (var i=0 ; i<ip.length ; i++ ){
+					//console.log( dec2bin( ip[i] ) );
+					ip_en_binaire += dec2bin( ip[i] );
+					
+			}
+			
+			console.log("L'ip réseau en binaire : "+ip_en_binaire);
+			if (ip_en_binaire.length !=32){
+				console.log("ip réseau fausse, taille invalide"); return;	 }
+				
+			if (masque_ok){			
+				broadcast = ip_en_binaire.slice(0,nb) + "1".repeat(32-nb) ;
+				console.log("L'adresse de broadcast est : " + broadcast);
+				console.log("Donc " + IP_base2ToNum(broadcast) + " en numérique");
+				document.getElementById("broadcast").value = IP_base2ToNum(broadcast);
+			
+				if (ip_en_binaire.slice(nb) == "0".repeat(32-nb) ){
+					console.log("ip réseau ok");
+					go_plage(broadcast, ip_en_binaire);
+					document.getElementById('zone_msg_reseau').innerHTML = "";
+				} else {
+					console.log("adresse réseau invalide, des bits partie machine sont à 1");
+					document.getElementById('zone_msg_reseau').innerHTML = "Adresse réseau invalide";
+						
+				}
+			}
+			
+			
+		}
+		
+		function go_ip_random(){
+			document.getElementById('zone_msg_random').innerHTML = "";
+			ip_random = document.getElementById('ip_random').value.split('.');
+			//on convertit la string ip random en binaire
+			
+			ip_random_binaire ="";
+				
+			for (var i=0 ; i<ip_random.length ; i++ ){
+					
+				ip_random_binaire += dec2bin( ip_random[i] ); 
+					
+			}
+			console.log("IP random en binaire :" + ip_random_binaire) ;
+			
+			//on determine maintenant le broadcast et le reseau de ip random à partir du masque
+			if (masque_ok){
+				
+				ip_random_reseau = ip_random_binaire.slice(0,nb) + "0".repeat(32-nb);
+				console.log("IP réseau random : " + IP_base2ToNum(ip_random_reseau));
+				document.getElementById('ip_reseau').value = IP_base2ToNum(ip_random_reseau);
+				
+				if ( IP_base2ToNum(ip_random_reseau) == document.getElementById('ip_random').value )
+					document.getElementById('zone_msg_random').innerHTML = "il s'agit d'une adresse réseau. ";
+				
+				
+				
+				ip_random_broadcast = ip_random_binaire.slice(0,nb) + "1".repeat(32-nb);
+				console.log("IP broadcast random : " + IP_base2ToNum(ip_random_broadcast));
+				document.getElementById('broadcast').value = IP_base2ToNum(ip_random_broadcast);
+				
+				if ( IP_base2ToNum(ip_random_broadcast) == document.getElementById('ip_random').value )
+					document.getElementById('zone_msg_random').innerHTML = "il s'agit d'une adresse broadcast";
+					
+			go_plage(ip_random_broadcast, ip_random_reseau);
+			}
+			random_ok=true;
+			
+			if ( parseInt(ip_random_binaire.slice(0,8) , 2) == 10 || 
+			( parseInt(ip_random_binaire.slice(0,8) , 2) == 192 && parseInt( ip_random_binaire.slice(8,16) , 2) == 168) ||
+			( parseInt(ip_random_binaire.slice(0,8) , 2) == 172 && parseInt( ip_random_binaire.slice(8,16) , 2) >= 16 && parseInt( ip_random_binaire.slice(8,16) , 2) < 32 ) )
+				document.getElementById('zone_msg_prive').innerHTML = "il s'agit d'une adresse privée";
+			else 
+				document.getElementById('zone_msg_prive').innerHTML = "";
+				
+			if (ip_random_binaire.slice(0,1) == '0')
+				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe A";
+			else if (ip_random_binaire.slice(0,2) == '10')
+				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe B";
+			else if (ip_random_binaire.slice(0,3) == '110')
+				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe C";
+			else if (ip_random_binaire.slice(0,4) == '1110')
+				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe D";
+			else if (ip_random_binaire.slice(0,4) == '1111')
+				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe E";
+								
+		
+		
+		}
+		
+		function go_plage(broad,res){
+		
+		document.getElementById('plage_max').value = IP_base2ToNum( broad.slice(0,31)+'0' ) ;
+		
+		
+		document.getElementById('plage_min').value = IP_base2ToNum( res.slice(0,31)+'1' ) ;
+
+		}
+		
+		
+		
+		function go_calcul_taille(){
+			bits = 0;
+			document.getElementById('nb_machines').value;
+			while ( Math.pow(2,bits) - 2 < document.getElementById('nb_machines').value )
+				bits++;
+			
+			masque = "1".repeat(32-bits) + "0".repeat(bits);
+			IP_base2ToNum(masque);
+			
+			console.log("Il faudra " + bits.toString() + "bits dans la partie machine, /" + (32-bits).toString() ); 
+			console.log("Masque : " + IP_base2ToNum(masque) );
+			document.getElementById('masque_en_fonction').value = IP_base2ToNum(masque) + " /" + (32-bits).toString();
+			
+		}
+	</script>
+	<footer'>@Théo Peltier - 2019</footer>
