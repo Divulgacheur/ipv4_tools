@@ -1,3 +1,4 @@
+
 <!DOCTYPE HTML>
 <html lang="fr">
 	<head>
@@ -8,49 +9,268 @@
 		<title>IPv4 Tools</title>
 	</head>
 	<body>
-	
+	<style>
+	.y {
+		border: 3px solid transparent;
+		width: 18px;
+		overflow: hidden;
+		}
+		
+	table {
+		table-layout: fixed;
+		width: 18px;
+	}
+
+
+	</style>
 	<h1>IPv4 Tools</h1>
 	<h3>255.255.255.0</h3>
 	<h3>192.168.1.0</h3>
 	
-	<label for='plage'>Range of availables adresses </label>
-	<input readonly id='plage_min'></input>...<input readonly id='plage_max'></input><br><br>
+	<p>Range of availables adresses </p>
+	<input readonly id='plage_min'>...<input readonly id='plage_max'><br><br>
 	
 	<label for='ip_random'><i>an address among those available</i></label>
-	<input  id='ip_random' onchange='go_ip_random()' ></input>
-	<div id='zone_msg_random'></div><div id='zone_msg_prive'></div><div id='zone_msg_classe'></div>
+	<input  id='ip_random' onchange='go_ip_random()' >
+	<div id='zone_msg_random'></div><div id='zone_msg_prive'></div>
 	<br><br><br>
 	
 	
 	<label for='ip_reseau'>Network Address</label>
-	<input id='ip_reseau' onchange='go_ip_network()'></input>
+	<input id='ip_reseau' onchange='go_ip_network()'>
 	
 	<label for='broadcast'>Broadcast Address</label>
-	<input readonly id='broadcast' onchange='go_ip_network()'></input>
+	<input readonly id='broadcast' onchange='go_ip_network()'>
 	<div id='zone_msg_reseau'></div>
-
 	<br><br>
 	<label for='masque'>Mask</label>
-	<input id='masque' onchange='go_mask() ; go_ip_network()'></input>
+	<input id='masque' onchange='go_mask() ; go_ip_network()'>
 
 	<label for='cidr'>CIDR /</label>
-	<input size=2 id='cidr' onchange='go_cidr() ; go_ip_network()' ></input>
+	<input size=2 id='cidr' onchange='go_cidr() ; go_ip_network()' >
 	
 	<br><br><br><br><br><br><br>
-	<h2>Quel est le masque le mieux adapté ?</h2>
 	
+	
+	
+	
+	<h2>Quel est le masque le mieux adapté ?</h2>
+	<div>
 	<label for='nb_machines'>Nombre de machines</label>
-	<input id='nb_machines' oninput='go_calcul_taille()'></input>
+	<input id='nb_machines' oninput='go_calcul_taille()'>
 	
 	<label for='masque_en_fonction'>Masque</label>
 	<input id='masque_en_fonction'>
-	<br><br><br><br>
+	</div>
+	
+	<div>
+	<label for='masque_en_fonction'>Masque</label>
+	<input id='masque_en_fonction' placeholder="..........." >
+	Jusqu'à <input id='nb_machines' size=2 >machines.
+	
+
+	</div>
+	
+	
+	<br><hr>
+	<h1>Plan d'adressage VLSM</h1>
+	
+	<p>De combien de réseau(x) avez-vous besoin ?
+	<select onchange='maj_zone_nb()' id='nb_reseau'><script>
+			for (var i=1 ; i<=10 ; i++){
+				option = document.createElement( 'option' );
+				option.innerHTML = i;
+				document.getElementById('nb_reseau').appendChild(option);
+			} </script></select>
+		<br>
+		Quelle est l'adresse IP fournie par votre opérateur ? <input id='ip_fournie'>
+		et le masque <input id='masque_fourni' onchange='masque_vlsm(this)'></p>
+			
+			<script>
+					function maj_zone_nb() {
+			for (var i=document.getElementsByClassName('nb_hotes').length ; i<document.getElementById('nb_reseau').value ; i++){
+				input = document.createElement('input');
+				input.className = 'nb_hotes' ;
+				input.setAttribute('size',3)
+				input.setAttribute('onchange','calcul_vlsm('+(i+1)+')' )
+				p = document.createElement('p');
+				p.innerHTML = "R"+(i+1)+" " ;
+			
+				document.getElementById('zone_nb_machines').appendChild(p).appendChild(input);
+			}
+			}
+			</script>
+			
+	<div id ='zone_nb_machines'>Entrez le nombre d'hôtes pour chacun des réseaux<br>
+	R1 <input class='nb_hotes' onchange='calcul_vlsm(1)' size=3></div>
+	<br><br>
+	<div style='background-color: red; font-size: x-large;' id='zone_explication1' >
+	</div>
+	<div style='font-size: x-large;' id='zone_explication2' >
+	</div>
+	<br><br>
+	
+	<hr>
+	<h2>Convertisseur de masques génériques</h2>
+	<input value='192.168.1.16' onchange='maj_masque_generique()' id='range_min_gen'><label for='range_min_gen'>Première adresse</label>
+	<input value='192.168.1.31' onchange='maj_masque_generique()' id='range_max_gen'><label for='range_max_gen'>Dernière adresse</label>
 	<script>
+	function maj_masque_generique(){
+		range_min_gen_bin = conv_IP_vers_binaire(document.getElementById('range_min_gen').value);
+		range_max_gen_bin = conv_IP_vers_binaire(document.getElementById('range_max_gen').value);
+		
+		console.log(range_min_gen_bin);
+		console.log(range_max_gen_bin);
+
+
+		document.getElementById('range_min_gen').value.split('.');
+		document.getElementById('range_max_gen').value.split('.');
+		masque_generique = '';
+		for(i=0 ; i<4 ; i++){
+			masque_generique +=document.getElementById('range_max_gen').value.split('.')[i]-document.getElementById('range_min_gen').value.split('.')[i]
+			if(i<3) masque_generique+='.';
+		}
+	document.getElementById('masque_gen').value = masque_generique;
+		return masque_generique;
+	}	
+	</script>
+	<br><br><input id='masque_gen'><label for='masque_gen'>Masque générique correspondant</label>
+	on determine un masque de la taille de la difference entre les deux ip, et on le soustrait à 255.255.255.255
+	
+	
+	<br><br><br>
+	
+
+	
+	
+	<br>
+	<script>
+
+		var tab_taille_reseau = [] ;
 		var masque_en_binaire = "";
 		var nb ;
 		var masque_ok=false;
 		var ip_random_reseau;
 		var random_ok;
+		var masque_vlsm_en_binaire;
+		var tab;
+		
+		
+		function conv_IP_vers_binaire(string_ip){
+			string_ip = string_ip.split('.');
+			masque_en_binaire = "";
+			for (i=0 ; i<string_ip.length ; i++ )
+				masque_en_binaire += dec2bin( string_ip[i] ); 		
+			
+			return masque_en_binaire;	
+		}
+			
+		function calcul_vlsm() {
+			nb_total_hotes=0;
+			tab_taille_reseau = [] ;
+			for(i=0 ; i<document.getElementsByClassName('nb_hotes').length ; i++){
+					contenu = parseInt(document.getElementsByClassName('nb_hotes')[i].value , 10)
+				if( isNaN( contenu) )
+					return;
+				else {
+					nb_total_hotes+= parseInt( contenu) ;
+					tab_taille_reseau.push( [parseInt( contenu),'R'+(i+1)] ); 
+				}
+			}
+			console.log(nb_total_hotes);
+			
+			console.log( tab_taille_reseau.sort(function yolo(a, b) {
+									if (a[0] < b[0]) return 1;
+									if (a[0] > b[0]) return -1;
+									return 0; 
+									} ) )
+									
+			affichage_vlsm();
+		}
+		
+		function masque_vlsm(masque_param){
+			masque = document.getElementById('masque_fourni').value.split('.');
+			ip_vlsm = document.getElementById('ip_fournie').value;
+			tab = [];
+			masque_vlsm_en_binaire="";
+			
+			for (var i=0 ; i<masque.length ; i++ )
+				masque_vlsm_en_binaire += dec2bin( masque[i] ); 
+				
+			
+			
+			console.log("Le masque VLSM en binaire : "+masque_vlsm_en_binaire);
+			if (masque_vlsm_en_binaire.length !=32){
+				console.log("masque faux, taille invalide"); return;
+				masque_ok = false;								}
+				
+			regex = /(11*)(0*)/g ;
+			tab = regex.exec(masque_vlsm_en_binaire);
+			if (tab[1].length + tab[2].length != 32){
+				console.log("masque faux, c'est n'est pas une suite de 1 suivis d'une suite de 0"); return;	 
+				masque_ok = false; }
+			nb = (32-(tab[2].length) );
+			masque_ok = true;
+			console.log("Masque OK");
+			
+			console.log("partie réseau : "+ tab[1] + " ("+ tab[1].length + " bits) ");
+			console.log("partie machine : "+ tab[2] + " ("+ tab[2].length + " bits) ");
+			console.log("notation CIDR : /"+ nb);
+			affichage_vlsm();
+			return masque_vlsm_en_binaire;
+		}
+			
+		function go_vlsm(nb_machines){ //fonction servant à l'attribution d'un masque pour chacun des sous-réseaux
+			
+			bits = 0;
+			
+			while ( Math.pow(2,bits) - 2 < nb_machines )
+				bits++;
+			
+			masque = "1".repeat(32-bits) + "0".repeat(bits);
+			IP_base2ToNum(masque);
+			
+			console.log("Il faudra " + bits.toString() + "bits dans la partie machine, /" + (32-bits).toString() ); 
+			console.log("Masque : " + IP_base2ToNum(masque) );
+				
+			return masque;
+			
+			}
+			
+		function affichage_vlsm(){ //permet d'afficher toutes les infos pour faire fonctionner VLSM
+			
+			
+			chaine_masque ="<table><tr>";
+			for (y in tab[1])
+				chaine_masque+="<td class='y'>"+tab[1][y]+"</td>";
+				
+			//la partie machine du masque est représentée en gras, avec une ligne de sepération 
+			for (y in tab[2]){
+				if (y==0)
+					chaine_masque+="<td class='y' style='border-left: 3px solid black;'>X</td>";
+				else
+					chaine_masque+="<td class='y'>X</td>";
+			}
+			chaine_masque +="<td>&nbsp;&nbsp;&nbsp;&nbsp;masque</td></tr></table>";
+			document.getElementById('zone_explication1').innerHTML = chaine_masque; //affichage du masque fourni dans un tableau où 1 case = 1 caractère
+			
+			document.getElementById('zone_explication2').innerHTML = "";
+			for(i in tab_taille_reseau){ //calcul du masque de chaque réseau en fonction du nombre de machines
+				masque='';
+				bits = 0; // contient le nombre de bits de la partie machine
+				while ( Math.pow(2,bits) - 2 < tab_taille_reseau[i][0] ) 
+					bits++;
+				masque = "1".repeat(32-bits) + "0".repeat(bits);
+					
+				chaine ="<table><tr>";
+				
+				for (y in masque)
+					chaine+="<td class='y'>"+masque[y]+"</td>";
+					
+				chaine+="<td>&nbsp;&nbsp;&nbsp;&nbsp;/"+(32-bits)+ "&nbsp;&nbsp;&nbsp;"+(tab_taille_reseau[i][1])+"</td></tr></table>";
+				document.getElementById('zone_explication2').innerHTML += (chaine);
+			}
+		}
 		
 		function insert(str, index, value) {
 			return str.substr(0, index) + value + str.substr(index);
@@ -63,7 +283,7 @@
 			return res;
 		}
 		
-		function IP_base2ToNum(ip_binaire){
+		function IP_base2ToNum(ip_binaire){ //convertit une string d'un nombre binaire en string d'une ipv4 (xxx.xxx.xxx.xxx)
 		ip_numerique = ""
 		ip_numerique += parseInt( ip_binaire.slice(0,8) , 2 ) + "."
 		ip_numerique += parseInt( ip_binaire.slice(8,16) , 2 ) + "."
@@ -196,23 +416,9 @@
 				document.getElementById('zone_msg_prive').innerHTML = "il s'agit d'une adresse privée";
 			else 
 				document.getElementById('zone_msg_prive').innerHTML = "";
-				
-			if (ip_random_binaire.slice(0,1) == '0')
-				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe A";
-			else if (ip_random_binaire.slice(0,2) == '10')
-				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe B";
-			else if (ip_random_binaire.slice(0,3) == '110')
-				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe C";
-			else if (ip_random_binaire.slice(0,4) == '1110')
-				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe D";
-			else if (ip_random_binaire.slice(0,4) == '1111')
-				document.getElementById('zone_msg_classe').innerHTML = "Il s'agit d'une adresse de classe E";
-								
-		
-		
 		}
 		
-		function go_plage(broad,res){
+		function go_plage(broad,res){ //permet de calculer la plage d'adresses alouables à des machines
 		
 		document.getElementById('plage_max').value = IP_base2ToNum( broad.slice(0,31)+'0' ) ;
 		
@@ -223,7 +429,7 @@
 		
 		
 		
-		function go_calcul_taille(){
+		function go_calcul_taille(){ // permet de calculer le masque en fonction du nombre de machines voulues
 			bits = 0;
 			document.getElementById('nb_machines').value;
 			while ( Math.pow(2,bits) - 2 < document.getElementById('nb_machines').value )
@@ -235,7 +441,9 @@
 			console.log("Il faudra " + bits.toString() + "bits dans la partie machine, /" + (32-bits).toString() ); 
 			console.log("Masque : " + IP_base2ToNum(masque) );
 			document.getElementById('masque_en_fonction').value = IP_base2ToNum(masque) + " /" + (32-bits).toString();
-			
+			return masque;
 		}
 	</script>
-	<footer'>@Théo Peltier - 2019</footer>
+	<footer style='position: fixed; bottom: 0; '>@2019 Théo Peltier</footer>
+	</body>
+</html>
