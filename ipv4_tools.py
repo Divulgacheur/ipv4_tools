@@ -32,3 +32,7 @@ def adresse_broadcast(ip,masque): #retourne l'adresse broadcast à partir d'une 
 def rang_adresse_assignables(ip, masque): #retourne la première et la dernière adresse assignable du réseau de l'adresse & du masque donnés
     n = masque_vers_CIDR(masque)
     return [ conv_IPbin_vers_IPnum ( adresse_reseau_bin(ip,masque)[:31]+'1' ) , conv_IPbin_vers_IPnum ( adresse_broadcast_bin(ip,masque)[:31]+'0' ) ]
+
+def masque_generique(ip_debut, ip_fin): #retourne le masque générique pour sélectionner toutes les adresses comprises entre celles données en paramètre, utile pour les ACL
+    return "".join(str(int(ip_fin.split('.')[i] ) - int(ip_debut.split('.')[i] ) ) + '.' for i in range(4) )[:-1]
+    
